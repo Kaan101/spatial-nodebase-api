@@ -1,16 +1,14 @@
-import os
+﻿import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# Railway'den alacağımız DATABASE_URL (Örn: postgresql://user:pass@host:port/dbname)
-SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./local_test.db") # .env yoksa lokale sqlite kurar
 
-engine = create_engine(SQLALCHEMY_DATABASE_URL)
+engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
 Base = declarative_base()
 
 def get_db():
