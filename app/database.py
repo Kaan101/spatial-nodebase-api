@@ -5,7 +5,13 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./local_test.db") # .env yoksa lokale sqlite kurar
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./local_test.db")
+
+# Railway'in verdiği URL'yi kurulu olan psycopg2 sürücüsüne yönlendiriyoruz
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+psycopg2://", 1)
+elif DATABASE_URL.startswith("postgresql://"):
+    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg2://", 1)
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
