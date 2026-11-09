@@ -1,4 +1,4 @@
-﻿from fastapi import FastAPI, Depends, HTTPException, status
+﻿from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from typing import List
@@ -23,7 +23,6 @@ app.add_middleware(
 async def health_check():
     return {"status": "success", "message": "Spatial NodeBase API - Database Connected!", "stage": 4}
 
-# --- TENANT (KİRACI) YÖNETİMİ ---
 @app.post("/tenants", response_model=TenantResponse, tags=["Tenants"])
 def create_tenant(tenant: TenantCreate, db: Session = Depends(get_db)):
     raw_key = generate_api_key()
@@ -36,12 +35,10 @@ def create_tenant(tenant: TenantCreate, db: Session = Depends(get_db)):
 
 @app.get("/me", tags=["Security"])
 def get_tenant_info(current_tenant: models.Tenant = Depends(get_current_tenant)):
-    return {"tenant_id": current_tenant.id, "name": current_tenant.name, "status": "Kimlik dogrulandi. İzolasyon basarili."}
+    return {"tenant_id": current_tenant.id, "name": current_tenant.name, "status": "Kimlik dogrulandi."}
 
-# --- TRACKING NODE (KONUM & İŞLEM) YÖNETİMİ ---
 @app.post("/nodes", response_model=TrackingNodeResponse, tags=["Tracking Nodes"])
 def create_node(node: TrackingNodeCreate, db: Session = Depends(get_db), current_tenant: models.Tenant = Depends(get_current_tenant)):
-    # Gelen veriyi (node) veritabanı modeline çevirirken, tenant_id'yi otomatik olarak "istek atan firmaya" zimmetliyoruz
     new_node = models.TrackingNode(**node.model_dump(), tenant_id=current_tenant.id)
     db.add(new_node)
     db.commit()
@@ -50,6 +47,5 @@ def create_node(node: TrackingNodeCreate, db: Session = Depends(get_db), current
 
 @app.get("/nodes", response_model=List[TrackingNodeResponse], tags=["Tracking Nodes"])
 def get_nodes(db: Session = Depends(get_db), current_tenant: models.Tenant = Depends(get_current_tenant), limit: int = 100):
-    # DİKKAT: Herkes sadece kendi tenant_id'sine ait verileri çekebilir! (Katı İzolasyon)
     nodes = db.query(models.TrackingNode).filter(models.TrackingNode.tenant_id == current_tenant.id).limit(limit).all()
     return nodes
